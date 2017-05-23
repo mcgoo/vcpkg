@@ -1,9 +1,9 @@
 include(vcpkg_common_functions)
 
-if (VCPKG_LIBRARY_LINKAGE STREQUAL static)                                          
-    message(STATUS "Warning: Static building of HPX not supported yet. Building dynamic.") 
-    set(VCPKG_LIBRARY_LINKAGE dynamic)                                              
-endif()                                                                             
+if (VCPKG_LIBRARY_LINKAGE STREQUAL static)
+    message(STATUS "Warning: Static building of HPX not supported yet. Building dynamic.")
+    set(VCPKG_LIBRARY_LINKAGE dynamic)
+endif()
 
 set(SOURCE_PATH ${CURRENT_BUILDTREES_DIR}/src/hpx_1.0.0)
 
@@ -15,29 +15,29 @@ vcpkg_download_distfile(ARCHIVE
 vcpkg_extract_source_archive(${ARCHIVE})
 
 # apply hotfix to enable building with vcpkg
-vcpkg_download_distfile(DIFF
+vcpkg_download_distfile(DIFF1
     URLS "http://stellar-group.org/files/build-system-changes-to-make-HPX-compile-when-built-with-vcpkg.diff"
-    FILENAME "build-system-changes-to-make-HPX-compile-when-built-with-vcpkg.diff"
+    FILENAME "hpx-build-system-changes-to-make-HPX-compile-when-built-with-vcpkg.diff"
     SHA512 e11b61c5b454907932abab0dacdf990699189eacd36934eeaaa4b57320efdaf8f6c42841494d2015d1d78dad48e36907c3223fc7b5500e06072783c7ef61e202
 )
-vcpkg_apply_patches(SOURCE_PATH ${SOURCE_PATH} PATCHES ${DIFF})
 
 # apply hotfix to fix issues with building 32bit version
-vcpkg_download_distfile(DIFF
+vcpkg_download_distfile(DIFF2
     URLS "http://stellar-group.org/files/Fixing-32bit-MSVC-compilation.diff"
-    FILENAME "Fixing-32bit-MSVC-compilation.diff"
+    FILENAME "hpx-Fixing-32bit-MSVC-compilation.diff"
     SHA512 31c904d317b4c24eddd819e4856f8326ff3850a5a196c7648c46a11dbb85f35e972e077957b3c4aec67c8b043816fe1cebc92cfe28ed815f682537dfc3421b8b
 )
-vcpkg_apply_patches(SOURCE_PATH ${SOURCE_PATH} PATCHES ${DIFF})
 
 # apply hotfix to fix issues when building with UNICODE enabled
-vcpkg_download_distfile(DIFF
+vcpkg_download_distfile(DIFF3
     URLS "http://stellar-group.org/files/Making-sure-UNICODE-on-Windows-does-not-break-by-default.diff"
-    FILENAME "Making-sure-UNICODE-on-Windows-does-not-break-by-default.diff"
+    FILENAME "hpx-Making-sure-UNICODE-on-Windows-does-not-break-by-default.diff"
     SHA512 8fcdb36307702d64b9d2b26920374a6c5a29a50d125305dc95926c4cbc91215cb0c72ede83b06d0fc007fe7b2283845e08351bd45f11f3677f0d3db4ac8f9424
 )
-vcpkg_apply_patches(SOURCE_PATH ${SOURCE_PATH} PATCHES ${DIFF})
-
+vcpkg_apply_patches(
+    SOURCE_PATH ${SOURCE_PATH}
+    PATCHES ${DIFF1} ${DIFF2} ${DIFF3}
+)
 
 SET(BOOST_PATH "${CURRENT_INSTALLED_DIR}/share/boost")
 SET(HWLOC_PATH "${CURRENT_INSTALLED_DIR}/share/hwloc")
@@ -64,17 +64,13 @@ file(INSTALL
     ${SOURCE_PATH}/LICENSE_1_0.txt
     DESTINATION ${CURRENT_PACKAGES_DIR}/share/hpx RENAME copyright)
 
-file(GLOB __hpx_cmakes ${CURRENT_PACKAGES_DIR}/lib/cmake/HPX/*.*)
-foreach(__hpx_cmake ${__hpx_cmakes})
-  file(COPY ${__hpx_cmake} DESTINATION ${CURRENT_PACKAGES_DIR}/share/hpx/cmake)
-  file(REMOVE ${__hpx_cmake})
-endforeach()
+vcpkg_fixup_cmake_targets(CONFIG_PATH lib/cmake/HPX)
+
+message(FATAL_ERROR "stop")
 
 file(GLOB __hpx_dlls ${CURRENT_PACKAGES_DIR}/lib/*.dll)
-foreach(__hpx_dll ${__hpx_dlls})
-  file(COPY ${__hpx_dll} DESTINATION ${CURRENT_PACKAGES_DIR}/bin)
-  file(REMOVE ${__hpx_dll})
-endforeach()
+file(COPY ${__hpx_dlls} DESTINATION ${CURRENT_PACKAGES_DIR}/bin)
+file(REMOVE ${__hpx_dlls})
 
 file(GLOB __hpx_dlls ${CURRENT_PACKAGES_DIR}/lib/hpx/*.dll)
 foreach(__hpx_dll ${__hpx_dlls})
